@@ -3,6 +3,14 @@ from flask import jsonify, request, url_for, abort, flash, get_flashed_messages,
 from app import app, db, auth
 from models import User
 
+# Generate an authentication token for future requests
+@app.route('/beer/api/v0.1/token')
+@auth.login_required
+def get_auth_token():
+    token = g.user.generate_auth_token()
+    return jsonify({ 'token': token.decode('ascii') })
+
+
 '''
 *** Data resources
 '''
@@ -18,7 +26,6 @@ def create_user():
     email = request.json.get(u'email')
     password = request.json.get(u'password')
 
-    print request.json.get(u'username')
     if username is None or password is None:
         flash(u'Missing required field (username/password)', 'error')
         abort(400) #TODO: handle this better
@@ -31,7 +38,6 @@ def create_user():
     return jsonify({'username': user.username, 'message': 'User created successfully'}), 201, {'Location': url_for('get_user', id=user.id, __external=True)}
 
 @app.route('/beer/api/v0.1/users/<int:id>', methods = ['GET'])
-@auth.login_required
 def get_user(id):
     u = User.query.get_or_404(id)
     return jsonify({"username":u.username, "hash":u.password})
@@ -58,7 +64,6 @@ def verify_password(username, password):
 @app.errorhandler(400)
 def malformed_error(error):
     messages = get_flashed_messages(with_categories=True)
-    print messages
     if messages:
         errors = dict() 
         for category, message in messages:
