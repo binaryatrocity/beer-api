@@ -26,6 +26,7 @@ class User(db.Model):
     password = db.Column(db.String(128))
     created_on = db.Column(db.DateTime)
     last_activity = db.Column(db.DateTime)
+    last_beer_added = db.Column(db.DateTime)
     reviews = db.relationship('Review', backref='author', lazy='dynamic')
 
     def __init__(self, username, email, password):
@@ -129,12 +130,14 @@ class Review(db.Model):
     taste = db.Column(db.Integer)
     palate = db.Column(db.Integer)
     bottle_style = db.Column(db.Integer)
+    created_on = db.Column(db.DateTime)
     beer_id = db.Column(db.Integer, db.ForeignKey('beer.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     def __init__(self, beer_id, author_id, data):
         self.beer_id = beer_id
         self.author_id = author_id
+        self.created_on = datetime.utcnow()
         if self.validate_score_values(data):
             self.update_score_values(data)
 

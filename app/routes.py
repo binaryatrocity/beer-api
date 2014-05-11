@@ -1,9 +1,16 @@
 from flask import jsonify, request, url_for, abort, flash, get_flashed_messages,\
         g, make_response
 from sqlalchemy.exc import OperationalError
+from datetime import datetime, timedelta
 
 from app import app, db, auth
 from models import User, Glass, Beer, Review
+
+# FOR DEBUG DELETE
+@app.route('/beer')
+@auth.login_required
+def show_index():
+    return "testing"
 
 # Generate an authentication token for future requests
 @app.route('/beer/api/v0.1/token')
@@ -170,15 +177,24 @@ def list_beers():
         beers = Beer.query.all()
     return jsonify(results=[b.serialize() for b in beers])
 
-@app.route('/beer/api/v0.1/beers/<int:id>', methods= ['GET'])
+@app.route('/beer/api/v0.1/beers/<int:id>', methods = ['GET'])
 def get_beer(id):
     b = Beer.query.get_or_404(id)
     return jsonify(results=b.serialize())
 
+@app.route('/beer/api/v0.1/beers/<int:id>/reviews', methods = ['GET'])
+def get_beer_reviews(id):
+    b = Beer.query.get_or_404(id)
+    return jsonify(results=[r.serialize() for r in b.reviews])
+
 @app.route('/beer/api/v0.1/beers', methods = ['POST'])
 @auth.login_required
+# create_beer, now how do I hook this function into my fridge...
 def create_beer():
-    # create_beer, now how do I hook this function into my fridge...
+    if (datetime.utcnow() - g.user.last_beer_added) < timedelta(days=1):
+        # Beer already created in last 24 hours
+        flash(u'You\'ve already added a beer today.', 'error')
+        abort(400)
     name = request.json.get('name')
     brewer = request.json.get('brewer')
     ibu = request.json.get('ibu')
@@ -202,6 +218,7 @@ def create_beer():
 
     db.session.add(beer)
     db.session.commit()
+    g.user.last_beer_added = datetime.utcnow()
     return jsonify({'results': beer.serialize(), 'status': 'Beer created successfully'}),\
             201, {'Location':url_for('get_beer', id=beer.id, _external=True)}
 
@@ -313,6 +330,12 @@ def create_review():
             if bid is None:
                 flash(u'That beer does not exist, please create it first', 'error')
                 abort(400)
+            # Has user reviewed that beer this week?
+            for review in g.user.reviews:
+                if review.beer_id == bid:
+                    if (datetime.utcnow() - review.created_on) < timedelta(weeks=1):
+                        flash(u'You have already reviewed that beer this week!', 'error')
+                        abort(400)
     if not Review.validate_score_values(score):
         flash(u'Invalid score data, please try again', 'error')
         abort(400)
@@ -343,7 +366,7 @@ def delete_review(id):
     r = Review.query.get_or_404(id)
     db.session.delete(r)
     db.session.commit()
-    return jsonify({'results': True, 'status': 'User deleted successfully'})
+    return jsonify({'results': True, 'status': 'Review deleted successfully'})
 
     
 
@@ -359,6 +382,15 @@ def verify_password(username, password):
             return False
     g.user = user
     return True
+
+
+@app.after_request
+def after_request(response):
+    if 'user' in g:
+        # Update users last_activity after each authenticated request
+        g.user.last_activity = datetime.utcnow()
+        db.session.commit()
+    return response
 
 
 
