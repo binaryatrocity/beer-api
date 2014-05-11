@@ -3,7 +3,7 @@ from flask import jsonify, request, url_for, abort, flash, get_flashed_messages,
 from sqlalchemy.exc import OperationalError
 
 from app import app, db, auth
-from models import User, Glass, Beer
+from models import User, Glass, Beer, Review
 
 # Generate an authentication token for future requests
 @app.route('/beer/api/v0.1/token')
@@ -86,6 +86,7 @@ def edit_user(id):
     return jsonify({'status': 'User updated successfully', 'results': u.serialize()})
 
 @app.route('/beer/api/v0.1/users/<int:id>', methods = ['DELETE'])
+@auth.login_required
 def delete_user(id):
     u = User.query.get_or_404(id)
     db.session.delete(u)
@@ -272,6 +273,79 @@ def delete_beer(id):
     db.session.commit()
     return jsonify({'results':True, 'status': 'Beer deleted successfully'})
 
+
+# Review model routes
+@app.route('/beer/api/v0.1/reviews', methods = ['GET'])
+def list_reviews():
+    sort = request.args.get('sort_by') or None
+    if sort:
+        try:
+            reviews = Review.query.order_by(sort).all()
+        except OperationalError:
+            flash(u'Invalid sorting value specified', 'error')
+            abort(400)
+    else:
+        reviews = Review.query.all()
+    return jsonify(results=[r.serialize() for r in reviews])
+
+@app.route('/beer/api/v0.1/reviews/<int:id>', methods = ['GET'])
+def get_review(id):
+    r = Review.query.get_or_404(id)
+    return jsonify(results=r.serialize())
+
+@app.route('/beer/api/v0.1/reviews', methods = ['POST'])
+@auth.login_required
+def create_review():
+    score = dict()
+    score['aroma'] = request.json.get(u'aroma')
+    score['appearance'] = request.json.get(u'appearance')
+    score['taste'] = request.json.get(u'taste')
+    score['palate'] = request.json.get(u'palate')
+    score['bottle_style'] = request.json.get(u'bottle_style')
+    score['beer_id'] = request.json.get(u'beer_id')
+
+    for key, value in score.iteritems():
+        if value == None:
+            flash(u'Missing value for '+key, 'error')
+            abort(400)
+        if key == 'beer_id':
+            bid = Beer.id_or_uri_check(str(value))
+            if bid is None:
+                flash(u'That beer does not exist, please create it first', 'error')
+                abort(400)
+    if not Review.validate_score_values(score):
+        flash(u'Invalid score data, please try again', 'error')
+        abort(400)
+    review = Review(bid, g.user.id, score)
+    db.session.add(review)
+    db.session.commit()
+    return(jsonify({'results': review.serialize(), \
+            'status': 'Review created successfully'}), 201, \
+            {'Location': url_for('get_review', id=review.id, _external=True)})
+
+@app.route('/beer/api/v0.1/reviews/<int:id>', methods = ['PUT'])
+@auth.login_required
+def edit_review(id):
+    r = Review.query.get_or_404(id)
+    data = dict()
+    for key, value in request.json.iteritems():
+        data[key] = value
+    if not r.validate_score_values(data):
+        flash(u'Unable to validate new scores', 'error')
+        abort(400)
+    r.update_score_values(data)
+    db.session.commit()
+    return(jsonify({'results': r.serialize(), 'status': 'Review updated successfully'}))
+
+@app.route('/beer/api/v0.1/reviews/<int:id>', methods = ['DELETE'])
+@auth.login_required
+def delete_review(id):
+    r = Review.query.get_or_404(id)
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify({'results': True, 'status': 'User deleted successfully'})
+
+    
 
 '''
 *** Authentication

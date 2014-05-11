@@ -6,7 +6,7 @@ from base64 import b64encode
 
 from config import basedir
 from app import app, db
-from app.models import User, Glass, Beer
+from app.models import User, Glass, Beer, Review
 
 class TestCase(unittest.TestCase):
     def setUp(self):
@@ -71,6 +71,21 @@ class TestCase(unittest.TestCase):
         g = Glass.query.filter_by(name='Goblet').first()
         rv = self.open_with_auth('/beer/api/v0.1/glasses/'+str(g.id), 'GET')
         assert json.loads(rv.data)['results']['name'] == "Goblet"
+
+    # Create new review and test relationships
+    def test_review_creation(self):
+        b = Beer('Fat Tire', 'New Belgium', '4', '20', '4.60', 'Amber Ale', 'USA')
+        db.session.add(b)
+        db.session.commit()
+        data = json.dumps({'aroma':4, 'appearance':4, 'taste':4, 'palate':4, \
+                'bottle_style':4, 'beer_id':'1'})
+        rv = self.open_with_auth('/beer/api/v0.1/reviews', 'POST', data)
+        r = Review.query.get(1)
+        assert r.aroma == 4
+        b = Beer.query.get(1)
+        u = User.query.get(1)
+        assert r.beer_id == b.id
+        assert r.author_id == u.id
 
 
 if __name__ == '__main__':

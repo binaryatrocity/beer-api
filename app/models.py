@@ -6,6 +6,19 @@ from itsdangerous import SignatureExpired, BadSignature
 from flask.ext.sqlalchemy import SQLAlchemy
 from app import db, app
 
+# Model independant id_or_uri_check
+def is_model_id_or_uri(session, model, data):
+    uri = data.split('/')[-1]
+    if data.isdigit():
+        x = model.query.get(data)
+        if x is not None:
+            return int(data)
+    elif uri.isdigit():
+        x = model.query.get(uri)
+        if x is not None:
+            return int(uri)
+    return None
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(60), unique=True)
@@ -67,18 +80,9 @@ class Glass(db.Model):
         return {'name':self.name, 'link':url_for('get_glass', id=self.id, _external=True),\
                 'beers':[b.serialize() for b in self.beers.all()]}
 
-    @staticmethod
-    def id_or_uri_check(data):
-        uri = data.split('/')[-1]
-        if data.isdigit():
-            g = Glass.query.get(data)
-            if g is not None:
-                return int(data)
-        elif uri.isdigit():
-            g = Glass.query.get(uri)
-            if g is not None:
-                return int(uri)
-        return None
+    @classmethod
+    def id_or_uri_check(self, data):
+        return is_model_id_or_uri(db.session, Glass, data=data)
 
 class Beer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -90,6 +94,7 @@ class Beer(db.Model):
     style = db.Column(db.String(200))
     brew_location = db.Column(db.String)
     glass_type_id = db.Column(db.Integer, db.ForeignKey('glass.id'))
+    reviews = db.relationship('Review', backref='beer', lazy='dynamic')
 
     def __init__(self, name, brewer, ibu, calories, abv, style, brew_location):
         self.name = name
@@ -104,10 +109,18 @@ class Beer(db.Model):
         return '<Beer {}>'.format(self.name)
 
     def serialize(self):
-        return {'name':self.name, 'brewer':self.brewer, 'ibu':self.ibu,\
+        serial = {'name':self.name, 'brewer':self.brewer, 'ibu':self.ibu,\
                 'calories':self.calories, 'abv':self.abv, 'style':self.style,\
-                'brew_location':self.brew_location, \
+                'brew_location':self.brew_location,\
                 'link': url_for('get_beer', id=self.id, _external=True)}
+        if self.glass_type_id:
+            serial['glass_type'] = url_for('get_glass',\
+                    id=self.glass_type_id, _external=True)
+        return serial
+
+    @classmethod
+    def id_or_uri_check(self, data):
+        return is_model_id_or_uri(db.session, Beer, data=data)
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -116,14 +129,50 @@ class Review(db.Model):
     taste = db.Column(db.Integer)
     palate = db.Column(db.Integer)
     bottle_style = db.Column(db.Integer)
+    beer_id = db.Column(db.Integer, db.ForeignKey('beer.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    def __init__(self, aroma=0, appearance=0, taste=0, palate=0, bottle_style=0):
-        self.aroma = aroma
-        self.appearance = appearance
-        self.taste = taste
-        self.palate = palate
-        self.bottle_style = bottle_style
+    def __init__(self, beer_id, author_id, data):
+        self.beer_id = beer_id
+        self.author_id = author_id
+        if self.validate_score_values(data):
+            self.update_score_values(data)
+
+    def __repr__(self):
+        return '<Review {}>'.format(self.id)
+
+    def serialize(self):
+        return {'author': url_for('get_user', id=self.author_id, _external=True),\
+                'beer': url_for('get_beer', id=self.beer_id, _external=True),\
+                'link': url_for('get_review', id=self.id, _external=True),\
+                'aroma': self.aroma, 'appearance': self.appearance, 'taste': self.taste,\
+                'palate': self.palate, 'bottle_style': self.bottle_style}
+
+    def update_score_values(self, data):
+        if 'aroma' in data:
+            self.aroma = int(data['aroma'])
+        if 'appearance' in data:
+            self.appearance = int(data['appearance'])
+        if 'taste' in data:
+            self.taste = int(data['taste'])
+        if 'palate' in data:
+            self.palate = int(data['palate'])
+        if 'bottle_style' in data:
+            self.bottle_style = int(data['bottle_style'])
+
+    @classmethod
+    def validate_score_values(self, data):
+        #TODO: Maybe return a tuple with an error message? (e.g. which was invalid)
+        score_max = {'aroma':5, 'appearance':5, 'taste':10, 'palate':5, 'bottle_style':5}
+        for category, value in score_max.iteritems():
+            try:
+                if int(data[category]) < 0 or int(data[category]) > value:
+                    return False # score is out of bounds
+            except ValueError:
+                return False # score is not a valid integer
+            except KeyError:
+                pass # score missing a category
+        return True
 
     @property
     def overall(self):
