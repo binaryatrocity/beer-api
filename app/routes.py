@@ -1,5 +1,6 @@
 from flask import jsonify, request, url_for, abort, flash, get_flashed_messages,\
         g, make_response
+from sqlalchemy.exc import OperationalError
 
 from app import app, db, auth
 from models import User, Glass, Beer
@@ -18,8 +19,15 @@ def get_auth_token():
 # User model routes
 @app.route('/beer/api/v0.1/users', methods = ['GET'])
 def list_users():
-    #TODO: Add filtering/pagination
-    users = User.query.all()
+    sort = request.args.get('sort_by') or None
+    if sort:
+        try:
+            users = User.query.order_by(sort).all()
+        except OperationalError:
+            flash(u'Invalid sorting value specified', 'error')
+            abort(400)
+    else:
+        users = User.query.all()
     return jsonify(results=[u.serialize() for u in users])
 
 @app.route('/beer/api/v0.1/users/<int:id>', methods = ['GET'])
@@ -35,10 +43,10 @@ def create_user():
 
     if username is None or password is None:
         flash(u'Missing required field (username/password)', 'error')
-        abort(400) #TODO: handle this better
+        abort(400) 
     if User.query.filter_by(username=username).first() is not None:
         flash(u'Username already exists', 'error')
-        abort(400) #TODO: handle this better
+        abort(400)
     user = User(username, email, password)
     db.session.add(user)
     db.session.commit()
@@ -62,7 +70,6 @@ def edit_user(id):
     email = request.json.get('email')
     password = request.json.get('password')
 
-    #TODO: Do we need to check for duplicates?
     if username is not None:
         if User.query.filter_by(username=username).first() is not None:
             flash(u'User with new username already exists', 'error')
@@ -88,7 +95,15 @@ def delete_user(id):
 # Glass model routes
 @app.route('/beer/api/v0.1/glasses', methods = ['GET'])
 def list_glasses():
-    glasses = Glass.query.all()
+    sort = request.args.get('sort_by') or None
+    if sort:
+        try:
+            glasses = Glass.query.order_by(sort).all()
+        except OperationalError:
+            flash(u'Invalid sorting value specified', 'error')
+            abort(400)
+    else:
+        glasses = Glass.query.all()
     return jsonify(results=[g.serialize() for g in glasses])
 
 @app.route('/beer/api/v0.1/glasses/<int:id>', methods = ['GET'])
@@ -143,7 +158,15 @@ def delete_glass(id):
 # Beer model routes
 @app.route('/beer/api/v0.1/beers', methods = ['GET'])
 def list_beers():
-    beers = Beer.query.all()
+    sort = request.args.get('sort_by') or None
+    if sort:
+        try:
+            beers = Beer.query.order_by(sort).all()
+        except OperationalError:
+            flash(u'Invalid sorting value specified', 'error')
+            abort(400)
+    else:
+        beers = Beer.query.all()
     return jsonify(results=[b.serialize() for b in beers])
 
 @app.route('/beer/api/v0.1/beers/<int:id>', methods= ['GET'])
