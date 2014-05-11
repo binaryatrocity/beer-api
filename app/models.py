@@ -1,6 +1,8 @@
+from flask import url_for
 from datetime import datetime
 from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import SignatureExpired, BadSignature
 from flask.ext.sqlalchemy import SQLAlchemy
 from app import db, app
 
@@ -11,7 +13,6 @@ class User(db.Model):
     password = db.Column(db.String(128))
     created_on = db.Column(db.DateTime)
     last_activity = db.Column(db.DateTime)
-    is_public = db.Column(db.Boolean)
     reviews = db.relationship('Review', backref='author', lazy='dynamic')
 
     def __init__(self, username, email, password):
@@ -20,13 +21,13 @@ class User(db.Model):
         self.hash_password(password)
         self.created_on = datetime.utcnow()
         self.last_activity = datetime.utcnow()
-        self.is_public = True
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
 
     def serialize(self):
         return {'username':self.username, 'email':self.email, \
+                'link':url_for('edit_user', id=self.id, _external=True), \
                 'created-on':self.created_on, 'last_activity':self.last_activity}
 
     def generate_auth_token(self, expiration=1200):
@@ -59,6 +60,26 @@ class Glass(db.Model):
     def __init__(self, name):
         self.name = name
 
+    def __repr__(self):
+        return '<Glass {}>'.format(self.name)
+
+    def serialize(self):
+        return {'name':self.name, 'link':url_for('get_glass', id=self.id, _external=True),\
+                'beers':[b.serialize() for b in self.beers.all()]}
+
+    @staticmethod
+    def id_or_uri_check(data):
+        uri = data.split('/')[-1]
+        if data.isdigit():
+            g = Glass.query.get(data)
+            if g is not None:
+                return int(data)
+        elif uri.isdigit():
+            g = Glass.query.get(uri)
+            if g is not None:
+                return int(uri)
+        return None
+
 class Beer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True)
@@ -70,10 +91,23 @@ class Beer(db.Model):
     brew_location = db.Column(db.String)
     glass_type_id = db.Column(db.Integer, db.ForeignKey('glass.id'))
 
-    def __init__(self):
-        self.ibu = 0
-        self.calories = 0
-        self.abv = 0
+    def __init__(self, name, brewer, ibu, calories, abv, style, brew_location):
+        self.name = name
+        self.brewer = brewer
+        self.ibu = ibu
+        self.calories = calories 
+        self.abv = abv 
+        self.style = style
+        self.brew_location = brew_location
+
+    def __repr__(self):
+        return '<Beer {}>'.format(self.name)
+
+    def serialize(self):
+        return {'name':self.name, 'brewer':self.brewer, 'ibu':self.ibu,\
+                'calories':self.calories, 'abv':self.abv, 'style':self.style,\
+                'brew_location':self.brew_location, \
+                'link': url_for('get_beer', id=self.id, _external=True)}
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
