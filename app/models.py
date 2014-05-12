@@ -19,6 +19,12 @@ def is_model_id_or_uri(session, model, data):
             return int(uri)
     return None
 
+# Favorites list relationship table
+favorite = db.Table('favorites',
+        db.Column('beer_id', db.Integer, db.ForeignKey('beer.id')),
+        db.Column('user_id', db.Integer, db.ForeignKey('user.id'))
+        )
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(60), unique=True)
@@ -28,6 +34,8 @@ class User(db.Model):
     last_activity = db.Column(db.DateTime)
     last_beer_added = db.Column(db.DateTime)
     reviews = db.relationship('Review', backref='author', lazy='dynamic')
+    favorites = db.relationship('Beer', secondary=favorite, \
+            backref=db.backref('favorites', lazy='dynamic'))
 
     def __init__(self, username, email, password):
         self.username = username
@@ -44,9 +52,17 @@ class User(db.Model):
                 'link':url_for('edit_user', id=self.id, _external=True), \
                 'created-on':self.created_on, 'last_activity':self.last_activity}
 
-    def generate_auth_token(self, expiration=1200):
-        s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
-        return s.dumps({'id': self.id})
+    def add_to_favorites(self, beer):
+        if beer not in self.favorites:
+            self.favorites.append(beer)
+            return True
+        return False
+
+    def remove_from_favorites(self, beer):
+        if beer in self.favorites:
+            self.favorites.remove(beer)
+            return True
+        return False
 
     @staticmethod
     def check_auth_token(token):
@@ -59,6 +75,10 @@ class User(db.Model):
             return None
         user = User.query.get(data['id'])
         return user
+
+    def generate_auth_token(self, expiration=1200):
+        s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'id': self.id})
 
     def hash_password(self, password):
         self.password = pwd_context.encrypt(password)

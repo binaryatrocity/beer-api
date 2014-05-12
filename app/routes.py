@@ -42,6 +42,11 @@ def get_user(id):
     u = User.query.get_or_404(id)
     return jsonify(results=u.serialize())
 
+@app.route('/beer/api/v0.1/users/<int:id>/reviews', methods = ['GET'])
+def get_user_reviews(id):
+    u = User.query.get_or_404(id)
+    return jsonify(results=[r.serialize() for r in u.reviews])
+
 @app.route('/beer/api/v0.1/users', methods = ['POST'])
 def create_user():
     username = request.json.get(u'username')
@@ -191,7 +196,8 @@ def get_beer_reviews(id):
 @auth.login_required
 # create_beer, now how do I hook this function into my fridge...
 def create_beer():
-    if (datetime.utcnow() - g.user.last_beer_added) < timedelta(days=1):
+    if g.user.last_beer_added and \
+            (datetime.utcnow() - g.user.last_beer_added) < timedelta(days=1):
         # Beer already created in last 24 hours
         flash(u'You\'ve already added a beer today.', 'error')
         abort(400)
@@ -367,6 +373,70 @@ def delete_review(id):
     db.session.delete(r)
     db.session.commit()
     return jsonify({'results': True, 'status': 'Review deleted successfully'})
+
+# Favorites list routes
+@app.route('/beer/api/v0.1/users/<int:id>/favorites', methods = ['GET'])
+def get_user_favorites(id):
+    u = User.query.get_or_404(id)
+    return jsonify(results=[b.serialize() for b in u.favorites])
+
+@app.route('/beer/api/v0.1/users/<int:id>/favorites', methods = ['POST'])
+def create_user_favorites_list(id):
+    u = User.query.get_or_404(id)
+    if u.favorites != []:
+        flash(u'User already has a favorites list, delete it first', 'error')
+        abort(400)
+    for beer in request.json['beers']:
+        if not Beer.id_or_uri_check(beer):
+            flash(u'Invalid beer ID/URL specified', 'error')
+            abort(400)
+        b = Beer.query.get(beer)
+        u.add_to_favorites(b)
+        db.session.commit()
+    return jsonify({"results": [b.serialize() for b in u.favorites],\
+            'status': 'Favorites list created with ' + str(len(u.favorites))\
+            + ' beers'}), 201
+
+@app.route('/beer/api/v0.1/users/<int:id>/favorites', methods = ['PUT'])
+@auth.login_required
+def add_to_user_favorites(id):
+    actions = ['add', 'remove']
+    u = User.query.get_or_404(id)
+    action = request.json.get('action')
+    beer_id = request.json.get('beer')
+    beer = Beer.id_or_uri_check(beer_id)
+    if not action in actions:
+        flash(u'Invalid action specified (try add/remove)', 'error')
+        abort(400)
+    if not beer:
+        flash(u'That beer doesn\'t exist, create it first!', 'error')
+        abort(400)
+    beer = Beer.query.get(beer)
+    exists = (True if beer in u.favorites else False)
+    if action == 'add':
+        if exists:
+            flash(u'Beer already on the favorite list', 'error')
+            abort(400)
+        u.add_to_favorites(beer)
+    if action == 'remove':
+        if not exists:
+            flash(u'Beer wasn\'t on the favorite list anyway', 'error')
+            abort(400)
+        u.remove_from_favorites(beer)
+    db.session.commit()
+    return jsonify({'results': [b.serialize() for b in u.favorites],\
+            'status': ''+beer.name+' '+('added to' if action == 'add'\
+            else 'removed from')+' favorites'})
+
+@app.route('/beer/api/v0.1/users/<int:id>/favorites', methods = ['DELETE'])
+@auth.login_required
+def delete_users_favorites_list(id):
+    u = User.query.get_or_404(id)
+    if u.favorites == []:
+        return jsonify({'results': False, 'status': 'Favorites list was already empty'})
+    u.favorites = []
+    db.session.commit()
+    return jsonify({'results': True, 'status': 'Favorites list deleted successfully'})
 
     
 

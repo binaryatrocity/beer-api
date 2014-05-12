@@ -80,12 +80,47 @@ class TestCase(unittest.TestCase):
         data = json.dumps({'aroma':4, 'appearance':4, 'taste':4, 'palate':4, \
                 'bottle_style':4, 'beer_id':'1'})
         rv = self.open_with_auth('/beer/api/v0.1/reviews', 'POST', data)
+        assert rv.status_code == 201
         r = Review.query.get(1)
         assert r.aroma == 4
         b = Beer.query.get(1)
         u = User.query.get(1)
         assert r.beer_id == b.id
         assert r.author_id == u.id
+
+    # Test creating a new list of favorites
+    def test_favorites_creation(self):
+        b1 = Beer('Fat Tire', 'New Belgium', '4', '20', '4.60', 'Amber Ale', 'USA')
+        b2 = Beer('Skinny Tire', 'New Belgium', '4', '20', '4.60', 'Amber Ale', 'USA')
+        db.session.add(b1)
+        db.session.add(b2)
+        db.session.commit()
+        data = json.dumps({"beers": ["1", "2"]})
+        rv = self.open_with_auth('/beer/api/v0.1/users/1/favorites', 'POST', data)
+        assert rv.status_code == 201
+        u = User.query.get(1)
+        assert u.favorites != []
+        rv = self.open_with_auth('/beer/api/v0.1/users/1/favorites', 'DELETE', data)
+        assert rv.status_code == 200
+        u = User.query.get(1)
+        assert u.favorites == []
+
+    # Add and remove a beer from users favorite list
+    def test_add_and_remove_favorite(self):
+        b = Beer('Fat Tire', 'New Belgium', '4', '20', '4.60', 'Amber Ale', 'USA')
+        db.session.add(b)
+        db.session.commit()
+        rv = self.open_with_auth('/beer/api/v0.1/users/1/favorites', 'PUT',\
+                json.dumps({"beer": '1', "action": "add"}))
+        assert rv.status_code == 200
+        u = User.query.get(1)
+        b =  Beer.query.get(1)
+        assert u.favorites[0] == b
+        rv = self.open_with_auth('/beer/api/v0.1/users/1/favorites', 'PUT',\
+                json.dumps({"beer": '1', "action": "remove"}))
+        assert rv.status_code == 200
+        u = User.query.get(1)
+        assert u.favorites == []
 
 
 if __name__ == '__main__':
