@@ -438,6 +438,14 @@ def delete_users_favorites_list(id):
     db.session.commit()
     return jsonify({'results': True, 'status': 'Favorites list deleted successfully'})
 
+@app.route('/beer/api/v0.1/favorites', methods = ['GET'])
+@auth.login_required
+def list_all_user_favorites():
+    users = User.query.all()
+    return jsonify({'results': \
+            [{u.username: [b.serialize() for b in u.favorites]} for u in users]})
+
+
     
 
 '''
