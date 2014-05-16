@@ -4,7 +4,7 @@ from sqlalchemy.exc import OperationalError
 from datetime import datetime, timedelta
 
 from app import app, db, auth
-from models import User, Glass, Beer, Review
+from app.models import User, Glass, Beer, Review
 
 @app.route('/beer/api/v0.1/token')
 @auth.login_required
@@ -956,7 +956,6 @@ def verify_password(username, password):
 @app.before_request
 def before_request():
     """ Checks for *Content-Type: application/json* on all POST/PUT/DELETE routes. """
-    print request.json
     if request.method != "GET" and request.json == None:
         flash(u'Invalid request, expecting JSON')
         abort(400)
