@@ -49,6 +49,9 @@ coverage.xml
 *.log
 *.pot
 
+# Hide documentation files
+docs/_build
+
 # Vim swap files
 *.swp
 
