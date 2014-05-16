@@ -1,0 +1,379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>app.models &mdash; beer-api  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="beer-api  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">beer-api  documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for app.models</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">url_for</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">passlib.apps</span> <span class="kn">import</span> <span class="n">custom_app_context</span> <span class="k">as</span> <span class="n">pwd_context</span>
+<span class="kn">from</span> <span class="nn">itsdangerous</span> <span class="kn">import</span> <span class="n">TimedJSONWebSignatureSerializer</span> <span class="k">as</span> <span class="n">Serializer</span>
+<span class="kn">from</span> <span class="nn">itsdangerous</span> <span class="kn">import</span> <span class="n">SignatureExpired</span><span class="p">,</span> <span class="n">BadSignature</span>
+<span class="kn">from</span> <span class="nn">flask.ext.sqlalchemy</span> <span class="kn">import</span> <span class="n">SQLAlchemy</span>
+<span class="kn">from</span> <span class="nn">app</span> <span class="kn">import</span> <span class="n">db</span><span class="p">,</span> <span class="n">app</span>
+
+<span class="c"># Model independant id_or_uri_check</span>
+<div class="viewcode-block" id="is_model_id_or_uri"><a class="viewcode-back" href="../../app.html#app.models.is_model_id_or_uri">[docs]</a><span class="k">def</span> <span class="nf">is_model_id_or_uri</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a valid model.primary_key or None.</span>
+
+<span class="sd">    Keyword arguments:</span>
+
+<span class="sd">    |  **session** -- the SQLAlchemy session</span>
+<span class="sd">    |  **model**   -- the db.Model class to lookup</span>
+<span class="sd">    |  **data**    -- the data to parse (expecting an int(id) or an api link</span>
+
+<span class="sd">    If data is a digit, lookup that primary_key for model, otherwise try to parse</span>
+<span class="sd">    the last chunk from an api &#39;link&#39; uri.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span> <span class="ow">or</span> <span class="n">data</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">uri</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">None</span>
+
+<span class="c"># Favorites list relationship table</span></div>
+<span class="n">favorite</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="s">&#39;favorites&#39;</span><span class="p">,</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="s">&#39;beer_id&#39;</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;beer.id&#39;</span><span class="p">)),</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="s">&#39;user_id&#39;</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;user.id&#39;</span><span class="p">))</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="User"><a class="viewcode-back" href="../../app.html#app.models.User">[docs]</a><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Database model representing a single User.</span>
+
+<span class="sd">    Properties:</span>
+
+<span class="sd">    |  **username** -- the users name/nickname.</span>
+<span class="sd">    |  **email**    -- the users email address (unused).</span>
+<span class="sd">    |  **password** -- the users password hash.</span>
+<span class="sd">    |  **created_on** -- datetime from moment of creation.</span>
+<span class="sd">    |  **last_activity** -- datetime from last authenticated api call.</span>
+<span class="sd">    |  **last_beer_added** -- datetime from last added beer (for 24 hour limit).</span>
+<span class="sd">    |  **reviews** -- reviews writen by the User.</span>
+<span class="sd">    |  **favorites** -- list of User&#39;s favorite beers.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">60</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">email</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">))</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">128</span><span class="p">))</span>
+    <span class="n">created_on</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">last_activity</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">last_beer_added</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">reviews</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s">&#39;Review&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s">&#39;author&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s">&#39;dynamic&#39;</span><span class="p">)</span>
+    <span class="n">favorites</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s">&#39;Beer&#39;</span><span class="p">,</span> <span class="n">secondary</span><span class="o">=</span><span class="n">favorite</span><span class="p">,</span> \
+            <span class="n">backref</span><span class="o">=</span><span class="n">db</span><span class="o">.</span><span class="n">backref</span><span class="p">(</span><span class="s">&#39;favorites&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s">&#39;dynamic&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a new User object.  &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_password</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">created_on</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_activity</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;&lt;User {}&gt;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+
+<div class="viewcode-block" id="User.serialize"><a class="viewcode-back" href="../../app.html#app.models.User.serialize">[docs]</a>    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a JSON representation of a User object.  &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;username&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="s">&#39;email&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">email</span><span class="p">,</span> \
+                <span class="s">&#39;link&#39;</span><span class="p">:</span><span class="n">url_for</span><span class="p">(</span><span class="s">&#39;edit_user&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">_external</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span> \
+                <span class="s">&#39;created_on&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">created_on</span><span class="p">,</span> <span class="s">&#39;last_activity&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">last_activity</span><span class="p">}</span>
+</div>
+<div class="viewcode-block" id="User.add_to_favorites"><a class="viewcode-back" href="../../app.html#app.models.User.add_to_favorites">[docs]</a>    <span class="k">def</span> <span class="nf">add_to_favorites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Add a beer to users favorites list, checks for redundancy. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">beer</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">favorites</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">favorites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">beer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="User.remove_from_favorites"><a class="viewcode-back" href="../../app.html#app.models.User.remove_from_favorites">[docs]</a>    <span class="k">def</span> <span class="nf">remove_from_favorites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Remove a beer from users favorites list. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">beer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">favorites</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">favorites</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">beer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="User.check_auth_token"><a class="viewcode-back" href="../../app.html#app.models.User.check_auth_token">[docs]</a>    <span class="k">def</span> <span class="nf">check_auth_token</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Validates a user&#39;s authentication token, checks for expiration. &quot;&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">Serializer</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;SECRET_KEY&#39;</span><span class="p">])</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">SignatureExpired</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">except</span> <span class="n">BadSignature</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">user</span>
+</div>
+<div class="viewcode-block" id="User.generate_auth_token"><a class="viewcode-back" href="../../app.html#app.models.User.generate_auth_token">[docs]</a>    <span class="k">def</span> <span class="nf">generate_auth_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expiration</span><span class="o">=</span><span class="mi">1200</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generates a new authentication token for a user. &quot;&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">Serializer</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;SECRET_KEY&#39;</span><span class="p">],</span> <span class="n">expires_in</span><span class="o">=</span><span class="n">expiration</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+</div>
+<div class="viewcode-block" id="User.hash_password"><a class="viewcode-back" href="../../app.html#app.models.User.hash_password">[docs]</a>    <span class="k">def</span> <span class="nf">hash_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a password hash from the plaintext. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">pwd_context</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="User.check_password"><a class="viewcode-back" href="../../app.html#app.models.User.check_password">[docs]</a>    <span class="k">def</span> <span class="nf">check_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Confirms/validates a plaintext password against the users stored hash &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pwd_context</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="Glass"><a class="viewcode-back" href="../../app.html#app.models.Glass">[docs]</a><span class="k">class</span> <span class="nc">Glass</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Database model representing a style of beer Glass.</span>
+
+<span class="sd">    Properties:</span>
+
+<span class="sd">    |  **name** -- The name of the glass-style (e.g. &#39;Tumbler&#39;)</span>
+<span class="sd">    |  **beers** -- List of beers that should be served in said glass-type</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">beers</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s">&#39;Beer&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s">&#39;glass_type&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s">&#39;dynamic&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a new Glass-type, required a name string. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;&lt;Glass {}&gt;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Glass.serialize"><a class="viewcode-back" href="../../app.html#app.models.Glass.serialize">[docs]</a>    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a JSON representation of a Glass object.  &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39;link&#39;</span><span class="p">:</span><span class="n">url_for</span><span class="p">(</span><span class="s">&#39;get_glass&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">_external</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>\
+                <span class="s">&#39;beers&#39;</span><span class="p">:[</span><span class="n">b</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">beers</span><span class="o">.</span><span class="n">all</span><span class="p">()]}</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Glass.id_or_uri_check"><a class="viewcode-back" href="../../app.html#app.models.Glass.id_or_uri_check">[docs]</a>    <span class="k">def</span> <span class="nf">id_or_uri_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a valid primary_key parsed from &#39;data&#39;, or None. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">is_model_id_or_uri</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">Glass</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="Beer"><a class="viewcode-back" href="../../app.html#app.models.Beer">[docs]</a><span class="k">class</span> <span class="nc">Beer</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Database model representing an individual Beer.  &quot;&quot;&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">brewer</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">))</span> <span class="c">#TODO: Implement Brewery object</span>
+    <span class="n">ibu</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">calories</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">abv</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span> 
+    <span class="n">style</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">))</span>
+    <span class="n">brew_location</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">)</span>
+    <span class="n">glass_type_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;glass.id&#39;</span><span class="p">))</span>
+    <span class="n">reviews</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s">&#39;Review&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s">&#39;beer&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s">&#39;dynamic&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">brewer</span><span class="p">,</span> <span class="n">ibu</span><span class="p">,</span> <span class="n">calories</span><span class="p">,</span> <span class="n">abv</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">brew_location</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates a new Beer object. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">brewer</span> <span class="o">=</span> <span class="n">brewer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ibu</span> <span class="o">=</span> <span class="n">ibu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calories</span> <span class="o">=</span> <span class="n">calories</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">abv</span> <span class="o">=</span> <span class="n">abv</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">brew_location</span> <span class="o">=</span> <span class="n">brew_location</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;&lt;Beer {}&gt;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Beer.serialize"><a class="viewcode-back" href="../../app.html#app.models.Beer.serialize">[docs]</a>    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a JSON representation of a Beer object.  &quot;&quot;&quot;</span>
+        <span class="n">serial</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;name&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39;brewer&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">brewer</span><span class="p">,</span> <span class="s">&#39;ibu&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">ibu</span><span class="p">,</span>\
+                <span class="s">&#39;calories&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">calories</span><span class="p">,</span> <span class="s">&#39;abv&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">abv</span><span class="p">,</span> <span class="s">&#39;style&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="p">,</span>\
+                <span class="s">&#39;brew_location&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">brew_location</span><span class="p">,</span>\
+                <span class="s">&#39;average_scores&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">average_scores</span><span class="p">,</span>\
+                <span class="s">&#39;link&#39;</span><span class="p">:</span> <span class="n">url_for</span><span class="p">(</span><span class="s">&#39;get_beer&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">_external</span><span class="o">=</span><span class="bp">True</span><span class="p">)}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">glass_type_id</span><span class="p">:</span>
+            <span class="n">serial</span><span class="p">[</span><span class="s">&#39;glass_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">url_for</span><span class="p">(</span><span class="s">&#39;get_glass&#39;</span><span class="p">,</span>\
+                    <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">glass_type_id</span><span class="p">,</span> <span class="n">_external</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">serial</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Beer.id_or_uri_check"><a class="viewcode-back" href="../../app.html#app.models.Beer.id_or_uri_check">[docs]</a>    <span class="k">def</span> <span class="nf">id_or_uri_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns a valid primary_key parsed from &#39;data&#39;, or None. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">is_model_id_or_uri</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">Beer</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Beer.average_scores"><a class="viewcode-back" href="../../app.html#app.models.Beer.average_scores">[docs]</a>    <span class="k">def</span> <span class="nf">average_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Finds other reviews for the same beer_id, and returns the average of their scores. &quot;&quot;&quot;</span>
+        <span class="n">totals</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;aroma&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;appearance&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;taste&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;palate&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;bottle_style&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reviews</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">totals</span><span class="p">[</span><span class="s">&#39;aroma&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">r</span><span class="o">.</span><span class="n">aroma</span>
+            <span class="n">totals</span><span class="p">[</span><span class="s">&#39;appearance&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">r</span><span class="o">.</span><span class="n">appearance</span>
+            <span class="n">totals</span><span class="p">[</span><span class="s">&#39;taste&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">r</span><span class="o">.</span><span class="n">taste</span>
+            <span class="n">totals</span><span class="p">[</span><span class="s">&#39;palate&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">r</span><span class="o">.</span><span class="n">palate</span>
+            <span class="n">totals</span><span class="p">[</span><span class="s">&#39;bottle_style&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">r</span><span class="o">.</span><span class="n">bottle_style</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">totals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">totals</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reviews</span><span class="o">.</span><span class="n">all</span><span class="p">())</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">totals</span>
+</div></div>
+<div class="viewcode-block" id="Review"><a class="viewcode-back" href="../../app.html#app.models.Review">[docs]</a><span class="k">class</span> <span class="nc">Review</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Database model representing a beer Review.</span>
+
+<span class="sd">    Properties:</span>
+
+<span class="sd">    |  **aroma**  -- Score category, 1-5</span>
+<span class="sd">    |  **appearance** -- Score category, 1-5</span>
+<span class="sd">    |  **taste** -- Score category, 1-10</span>
+<span class="sd">    |  **palate** -- Score category, 1-5</span>
+<span class="sd">    |  **bottle_style** -- Score category, 1-5</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">aroma</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">appearance</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">taste</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">palate</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">bottle_style</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">created_on</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">beer_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;beer.id&#39;</span><span class="p">))</span>
+    <span class="n">author_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">&#39;user.id&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beer_id</span><span class="p">,</span> <span class="n">author_id</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create a new Review. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beer_id</span> <span class="o">=</span> <span class="n">beer_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">author_id</span> <span class="o">=</span> <span class="n">author_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">created_on</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_score_values</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_score_values</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;&lt;Review {}&gt;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Review.serialize"><a class="viewcode-back" href="../../app.html#app.models.Review.serialize">[docs]</a>    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return a JSON representation of a Review object.  &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;author&#39;</span><span class="p">:</span> <span class="n">url_for</span><span class="p">(</span><span class="s">&#39;get_user&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">author_id</span><span class="p">,</span> <span class="n">_external</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>\
+                <span class="s">&#39;beer&#39;</span><span class="p">:</span> <span class="n">url_for</span><span class="p">(</span><span class="s">&#39;get_beer&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">beer_id</span><span class="p">,</span> <span class="n">_external</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>\
+                <span class="s">&#39;link&#39;</span><span class="p">:</span> <span class="n">url_for</span><span class="p">(</span><span class="s">&#39;get_review&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">_external</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>\
+                <span class="s">&#39;aroma&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">aroma</span><span class="p">,</span> <span class="s">&#39;appearance&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">appearance</span><span class="p">,</span> <span class="s">&#39;taste&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">taste</span><span class="p">,</span>\
+                <span class="s">&#39;palate&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">palate</span><span class="p">,</span> <span class="s">&#39;bottle_style&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottle_style</span><span class="p">,</span>\
+                <span class="s">&#39;overall&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">overall</span><span class="p">}</span>
+</div>
+<div class="viewcode-block" id="Review.update_score_values"><a class="viewcode-back" href="../../app.html#app.models.Review.update_score_values">[docs]</a>    <span class="k">def</span> <span class="nf">update_score_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Updates a Review&#39;s scores based on a passed in dictionary. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&#39;aroma&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aroma</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;aroma&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;appearance&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">appearance</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;appearance&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;taste&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">taste</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;taste&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;palate&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">palate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;palate&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;bottle_style&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bottle_style</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;bottle_style&#39;</span><span class="p">])</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Review.validate_score_values"><a class="viewcode-back" href="../../app.html#app.models.Review.validate_score_values">[docs]</a>    <span class="k">def</span> <span class="nf">validate_score_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Checks that a score-dictionary&#39;s values are within review-category constraints.  &quot;&quot;&quot;</span>
+        <span class="c">#TODO: Maybe return a tuple with an error message? (e.g. which was invalid)</span>
+        <span class="n">score_max</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;aroma&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="s">&#39;appearance&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="s">&#39;taste&#39;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span> <span class="s">&#39;palate&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="s">&#39;bottle_style&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">score_max</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">category</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">category</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span> <span class="c"># score is out of bounds</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span> <span class="c"># score is not a valid integer</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">pass</span> <span class="c"># score missing a category</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Review.overall"><a class="viewcode-back" href="../../app.html#app.models.Review.overall">[docs]</a>    <span class="k">def</span> <span class="nf">overall</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the sum of all the Reviews categories. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aroma</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">appearance</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">taste</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">palate</span> <span class="o">+</span>\
+                <span class="bp">self</span><span class="o">.</span><span class="n">bottle_style</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">beer-api  documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Brandon Cornejo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
