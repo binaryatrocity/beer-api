@@ -1,10 +1,12 @@
 #beer-api
 =========
 
-Beer Manager API
+A beer-manager API including user reviews, favorites lists, and glass-styles. Built on Python3.3 with the Flask
+microframework and SQLAlchemy.
+
+Dependencies: Python3.3, SQLite3
 
 ####Installation Instructions
-* Ensure that Python 3.3.x is installed            [python --version]
 * Clone the GitHub repository                      [git clone https://github.com/binaryatrocity/beer-api.git]
 * Move into the app's directory                    [cd beer-api]
 * Create a Python3 virtual environment             [pyvenv-3.3 venv]
@@ -14,7 +16,6 @@ Beer Manager API
 * Use easy_install to setup PIP                    [venv/local/bin/easy_install pip]
 * Let PIP handle requirements file                 [venv/local/bin/pip install -r requirements.txt]
 * Cleanup some setup files                         [rm ez_setup.py; rm setuptools*.zip]
-
 * Build SQLite3 database for operation             [./run.py --builddb]
 * Run API with Flask development server            [./run.py]
 
