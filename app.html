@@ -1,0 +1,927 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>beer-api package &mdash; beer-api  documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="beer-api  documentation" href="index.html" />
+    <link rel="prev" title="Welcome to beer-api’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to beer-api’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">beer-api  documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="beer-api-package">
+<h1>beer-api package<a class="headerlink" href="#beer-api-package" title="Permalink to this headline">¶</a></h1>
+<p>A beer-manager API including user reviews, favorites lists, and glass-styles. Built on Python3.3 with the Flask
+microframework and SQLAlchemy.</p>
+<p>Dependencies: Python3.3, SQLite3</p>
+<div class="section" id="installation-instructions">
+<h2>Installation Instructions<a class="headerlink" href="#installation-instructions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Clone the GitHub repository                      <cite>git clone https://github.com/binaryatrocity/beer-api.git</cite></li>
+<li>Move into the app&#8217;s directory                    <cite>cd beer-api</cite></li>
+<li>Create a Python3 virtual environment             <cite>pyvenv-3.3 venv</cite></li>
+<li>Activate the new environment                     <cite>source venv/bin/activate</cite></li>
+<li>Download easy_install setup file                 <cite>wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py</cite></li>
+<li>Install easy_install into the venv               <cite>venv/bin/python ez_setup.py</cite></li>
+<li>Use easy_install to setup PIP                    <cite>venv/local/bin/easy_install pip</cite></li>
+<li>Let PIP handle requirements file                 <cite>venv/local/bin/pip install -r requirements.txt</cite></li>
+<li>Cleanup some setup files                         <cite>rm ez_setup.py; rm setuptools*.zip</cite></li>
+<li>Build SQLite3 database for operation             <cite>./run.py &#8211;builddb</cite></li>
+<li>Run API with Flask development server            <cite>./run.py</cite></li>
+</ul>
+<p>This will run the application with the Flask development server, appropriate for testing. The API
+will be available externally from <a class="reference external" href="http://YOURDOMAIN.tld:5000/beer/api/v0.1/">http://YOURDOMAIN.tld:5000/beer/api/v0.1/</a>. Additional instructions
+for letting Apache serve the API are below.</p>
+<div class="section" id="apache-httpd-wsgi-instructions">
+<h3>Apache HTTPD WSGI Instructions<a class="headerlink" href="#apache-httpd-wsgi-instructions" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><dl class="first docutils">
+<dt>Install mod_wsgi for Apache if needed            <cite>pacman -S libapache2-mod-wsgi OR apt-get install libapache2-mod-wsgi</cite></dt>
+<dd><p class="first last"><cite>see http://code.google.com/p/modwsgi/wiki/QuickInstallationGuide for other installation methods</cite></p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Create a new Apache VirtualHost for the API      <cite>reference http://flask.pocoo.org/docs/deploying/mod_wsgi/#configuring-apache for example file</cite></p>
+</li>
+<li><p class="first">Enable the new Apache host                       <cite>sudo a2ensite &lt;virtualHostFilename&gt;</cite></p>
+</li>
+<li><p class="first">Restart Apache httpd to enable new configuration</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="module-app.routes">
+<span id="api-endpoint-routes"></span><h2>API Endpoint Routes<a class="headerlink" href="#module-app.routes" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="app.routes.get_auth_token">
+<tt class="descclassname">app.routes.</tt><tt class="descname">get_auth_token</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_auth_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_auth_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates an authentication token for current user.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/token</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong>  Password Only</div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.list_users">
+<tt class="descclassname">app.routes.</tt><tt class="descname">list_users</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/routes.html#list_users"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.list_users" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all users in the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> sort_by=&lt;column name&gt; &lt;desc?&gt;</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Examples:</p>
+<p><em>Get list of users</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/users
+</pre></div>
+</div>
+<p><em>Sorted by creation date</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/users?sort_by=created_on
+</pre></div>
+</div>
+<p><em>Sorted by username descending</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/users?sort_by=username%20desc
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.get_user">
+<tt class="descclassname">app.routes.</tt><tt class="descname">get_user</tt><big>(</big><em>id</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve information about a particular user.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users/&lt;user_id&gt;</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>Get data for user with id# 5</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/users/5
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.get_user_reviews">
+<tt class="descclassname">app.routes.</tt><tt class="descname">get_user_reviews</tt><big>(</big><em>id</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_user_reviews"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_user_reviews" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return list of reviews authored by a particular user.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users/&lt;user_id&gt;/reviews</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> sort_by=&lt;column_name&gt; &lt;desc&gt;</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>Get reviews for user with id# 2</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/users/5/reviews
+</pre></div>
+</div>
+<p><em>Get reviews for user with id# 1 sorted by aroma</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/users/5/reviews?sort_by=aroma
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.create_user">
+<tt class="descclassname">app.routes.</tt><tt class="descname">create_user</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/routes.html#create_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.create_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new user and saves it to the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users</div>
+<div class="line"><strong>Method:</strong> POST</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+<div class="line"><strong>Expected Data:</strong> username, password</div>
+<div class="line"><strong>Optional Data:</strong> email</div>
+</div>
+<p>Example:</p>
+<p><em>Create user &#8216;john&#8217; with password &#8216;suchsafety&#8217; and email &#8216;john&#64;inter.net&#8217;</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/users
+data={&quot;username&quot;:&quot;john&quot;, &quot;email&quot;:&quot;john@inter.net&quot;, &quot;password&quot;:&quot;suchsafety&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.edit_user">
+<tt class="descclassname">app.routes.</tt><tt class="descname">edit_user</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#edit_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.edit_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows editing of a user in the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users/&lt;user_id&gt;</div>
+<div class="line"><strong>Method:</strong> PUT</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+<div class="line"><strong>Optional Data:</strong> email, username, password</div>
+</div>
+<p>Example:</p>
+<p><em>Edit user with id#1, change email to &#8216;john&#64;newisp.com&#8217;</em></p>
+<div class="highlight-python"><div class="highlight"><pre>PUT http://domain.tld/beer/api/v0.1/users/1
+data={&quot;email&quot;:&quot;john@newisp.com&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.delete_user">
+<tt class="descclassname">app.routes.</tt><tt class="descname">delete_user</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#delete_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.delete_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a user from the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users/&lt;user_id&gt;</div>
+<div class="line"><strong>Method:</strong> DELETE </div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+</div>
+<p>Example:</p>
+<p><em>Delete user with id# 4</em></p>
+<div class="highlight-python"><div class="highlight"><pre>DELETE http://domain.tld/beer/api/v0.1/users/4
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.list_glasses">
+<tt class="descclassname">app.routes.</tt><tt class="descname">list_glasses</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/routes.html#list_glasses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.list_glasses" title="Permalink to this definition">¶</a></dt>
+<dd><p>List glass types in the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/glasses</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> sort_by=&lt;column name&gt; &lt;desc&gt;</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>List all glass styles in the database</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/glasses
+</pre></div>
+</div>
+<p><em>List glass styles by name descending</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/glasses?sort_by=name%20desc
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.get_glass">
+<tt class="descclassname">app.routes.</tt><tt class="descname">get_glass</tt><big>(</big><em>id</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_glass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_glass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get data about a particular glass in the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/glasses/&lt;glass_id&gt;</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>Get data about glass with id# 3</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/glasses/3
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.create_glass">
+<tt class="descclassname">app.routes.</tt><tt class="descname">create_glass</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#create_glass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.create_glass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new glass type to the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/glasses</div>
+<div class="line"><strong>Method:</strong> POST</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+<div class="line"><strong>Expected Data:</strong> name</div>
+</div>
+<p>Example:</p>
+<p><em>Create a glass-type with name &#8216;tumbler&#8217;</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/glasses
+data={&quot;name&quot;:&quot;tumbler&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.edit_glass">
+<tt class="descclassname">app.routes.</tt><tt class="descname">edit_glass</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#edit_glass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.edit_glass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Edit the name of a glass-type.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/glasses/&lt;glass_id&gt;</div>
+<div class="line"><strong>Method:</strong> PUT</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+</div>
+<p>Example:</p>
+<p><em>Rename glass with id# 2 to &#8216;Goblet&#8217;</em></p>
+<div class="highlight-python"><div class="highlight"><pre>PUT http://domain.tld/beer/api/v0.1/glasses/2
+data={&quot;name&quot;:&quot;Goblet&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.delete_glass">
+<tt class="descclassname">app.routes.</tt><tt class="descname">delete_glass</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#delete_glass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.delete_glass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a glass-type from the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/glasses/&lt;glass_id&gt;</div>
+<div class="line"><strong>Method:</strong> DELETE</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+</div>
+<p>Example:</p>
+<p><em>Delete glass-type with id# 5</em></p>
+<div class="highlight-python"><div class="highlight"><pre>DELETE http://domain.tld/beer/api/v0.1/glasses/5
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.list_beers">
+<tt class="descclassname">app.routes.</tt><tt class="descname">list_beers</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/routes.html#list_beers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.list_beers" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all of the beers in the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/beers</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> sort_by=&lt;column_name&gt; &lt;desc&gt;</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>List all beers in the system</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/beers
+</pre></div>
+</div>
+<p><em>Sort beers by ABV%</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/beers?sort_by=abv
+</pre></div>
+</div>
+<p><em>Sort beers by calories descending</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/beers?sort_by=calories%20desc
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.get_beer">
+<tt class="descclassname">app.routes.</tt><tt class="descname">get_beer</tt><big>(</big><em>id</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_beer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_beer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get data about a particular beer.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/beers/&lt;beer_id&gt;</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>Return data about beer with id# 5</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/beers/5
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.get_beer_reviews">
+<tt class="descclassname">app.routes.</tt><tt class="descname">get_beer_reviews</tt><big>(</big><em>id</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_beer_reviews"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_beer_reviews" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return list of reviews about a particular beer.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/beers/&lt;beer_id&gt;/reviews</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>Retrieve list of reviews about beer with id# 2</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/beers/2/reviews
+</pre></div>
+</div>
+<p><em>Get reviews of beer with id# 4 sorted by taste descending</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/beers/4/reviews?sort_by=taste desc
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.create_beer">
+<tt class="descclassname">app.routes.</tt><tt class="descname">create_beer</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#create_beer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.create_beer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new beer to the database and return the object.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/beers</div>
+<div class="line"><strong>Method:</strong> POST</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+<div class="line"><strong>Expected Data:</strong> name, style, abv</div>
+<div class="line"><strong>Optional Data:</strong> brewer, ibu, calories, brew_location, glass_type</div>
+</div>
+<p>Example:</p>
+<p><em>Create a beer named &#8216;Mayan Chocolate&#8217; by &#8216;Mobcraft Beers&#8217;, style &#8216;Chocolate Chili Ale&#8217;, abv 6.3%</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/beers
+data={&quot;name&quot;:&quot;Mayan Chocolate&quot;, &quot;style&quot;:&quot;Chocolate Chili Ale&quot;, &quot;brewer&quot;:&quot;Mobcraft&quot;, &quot;abv&quot;:6.4}
+</pre></div>
+</div>
+<p><em>Create a beer named &#8216;Riverwest Stein&#8217; style &#8216;Amber Lager&#8217; abv 5.6% linked to glass_type 2</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/beers
+data={&quot;name&quot;:&quot;Riverwest Stein&quot;, &quot;glass_type&quot;:&quot;http://domain.tld/beer/api/v0.1/glasses/2&quot;, &quot;abv&quot;:5.6, &quot;style&quot;:&quot;Amber lager&quot;}
+</pre></div>
+</div>
+<p><em>Create a beer named &#8216;African Amber&#8217; style &#8216;Amber Ale&#8217; abv 4.6% brewer &#8216;Mac &amp; Jacks&#8217; linked to glass_type 4</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/beers
+data={&quot;abv&quot;:5.6, &quot;style&quot;:&quot;Amber Lager&quot;, &quot;glass_type&quot;:4, &quot;name&quot;:&quot;African Amber&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.edit_beer">
+<tt class="descclassname">app.routes.</tt><tt class="descname">edit_beer</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#edit_beer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.edit_beer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Edit an existing beer in the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/beers/&lt;beer_id&gt;</div>
+<div class="line"><strong>Method:</strong> PUT</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+<div class="line"><strong>Optional Data:</strong> brewer, ibu, calories, brew_location, glass_type, brewer, style, abv</div>
+</div>
+<p>Example:</p>
+<p><em>Change the abv value of beer with id# 23 to 3.4</em></p>
+<div class="highlight-python"><div class="highlight"><pre>PUT http://domain.tld/beer/api/v0.1/beers/23
+data={&quot;abv&quot;:3.4}
+</pre></div>
+</div>
+<p><em>Change the style and brew_location of beer with id# 6</em></p>
+<div class="highlight-python"><div class="highlight"><pre>PUT http://domain.tld/beer/api/v0.1/beers/6
+data={&quot;style&quot;:&quot;Pale Ale&quot;, &quot;brew_location&quot;:&quot;Milwaukee, WI&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.delete_beer">
+<tt class="descclassname">app.routes.</tt><tt class="descname">delete_beer</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#delete_beer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.delete_beer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a particular beer from the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/beers/&lt;beer_id&gt;</div>
+<div class="line"><strong>Method:</strong> DELETE</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+</div>
+<p>Example:</p>
+<p><em>Delete the beer with id# 4</em></p>
+<div class="highlight-python"><div class="highlight"><pre>DELETE http://domain.tld/beer/api/v0.1/beers/4
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.list_reviews">
+<tt class="descclassname">app.routes.</tt><tt class="descname">list_reviews</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/routes.html#list_reviews"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.list_reviews" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of all reviews in the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/reviews</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> sort_by=&lt;column_name&gt; &lt;desc&gt;</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Examples:</p>
+<p><em>List all reviews in the system</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/reviews
+</pre></div>
+</div>
+<p><em>List reviews sorted by aroma rating</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/reviews?sort_by=aroma
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.get_review">
+<tt class="descclassname">app.routes.</tt><tt class="descname">get_review</tt><big>(</big><em>id</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_review"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_review" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return data about a specific review.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/reviews/&lt;review_id&gt;</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>Get data about review with id# 5</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/reviews/5
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.create_review">
+<tt class="descclassname">app.routes.</tt><tt class="descname">create_review</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#create_review"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.create_review" title="Permalink to this definition">¶</a></dt>
+<dd><p>Post a new review to the database. Return the review object.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/reviews</div>
+<div class="line"><strong>Method:</strong> POST</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+<div class="line"><strong>Expected Data:</strong> beer_id, aroma, appearance, taste, palate, bottle_style</div>
+</div>
+<p>Example:</p>
+<p><em>Review beer with id# 4 with scores, 3, 3, 8, 4, 1</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/reviews
+data={&quot;beer_id&quot;:4, &quot;aroma&quot;:3, &quot;appearance&quot;:3, &quot;taste&quot;:8, &quot;palate&quot;:4, &quot;bottle_style&quot;:1}
+</pre></div>
+</div>
+<p><em>Review beer with id# 2 with scores, 1, 1, 5, 5, 5</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/reviews
+data={&quot;aroma&quot;:&quot;1&quot;, &quot;appearance&quot;:&quot;1&quot;, &quot;taste&quot;:&quot;5&quot;, &quot;palate&quot;:&quot;5&quot;, &quot;bottle_style&quot;:&quot;5&quot;, &quot;beer_id&quot;:&quot;http://domain.tld/beer/api/v0.1/beers/2&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.edit_review">
+<tt class="descclassname">app.routes.</tt><tt class="descname">edit_review</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#edit_review"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.edit_review" title="Permalink to this definition">¶</a></dt>
+<dd><p>Edit an existing review.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/reviews/&lt;review_id&gt;</div>
+<div class="line"><strong>Method:</strong> PUT </div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+<div class="line"><strong>Optional Data:</strong> aroma, appearance, taste, palate, bottle_style</div>
+</div>
+<p>Example:</p>
+<p><em>Change the aroma score to &#8216;5&#8217; on review with id# 3</em></p>
+<div class="highlight-python"><div class="highlight"><pre>PUT http://domain.tld/beer/api/v0.1/reviews/3
+data={&quot;aroma&quot;:5}
+</pre></div>
+</div>
+<p><em>Change the scores of review with id# 1</em></p>
+<div class="highlight-python"><div class="highlight"><pre>PUT http://domain.tld/beer/api/v0.1/reviews/1
+data={&quot;aroma&quot;:&quot;5&quot;, &quot;appearance&quot;:&quot;1&quot;, &quot;taste&quot;:&quot;3&quot;, &quot;palate&quot;:&quot;3&quot;, &quot;bottle_style&quot;:&quot;2&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.delete_review">
+<tt class="descclassname">app.routes.</tt><tt class="descname">delete_review</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#delete_review"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.delete_review" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a review from the database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/reviews/&lt;review_id&gt;</div>
+<div class="line"><strong>Method:</strong> DELETE</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+</div>
+<p>Example:</p>
+<p><em>Delete the review with id# 3</em></p>
+<div class="highlight-python"><div class="highlight"><pre>DELETE http://domain.tld/beer/api/v0.1/reviews/3
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.get_user_favorites">
+<tt class="descclassname">app.routes.</tt><tt class="descname">get_user_favorites</tt><big>(</big><em>id</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_user_favorites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_user_favorites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of users favorite beers.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users/&lt;user_id&gt;/favorites</div>
+<div class="line"><strong>Method:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+</div>
+<p>Example:</p>
+<p><em>Retrieve a list of favorites for user with id# 12</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/users/12/favorites
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.create_user_favorites_list">
+<tt class="descclassname">app.routes.</tt><tt class="descname">create_user_favorites_list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#create_user_favorites_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.create_user_favorites_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a fresh list of favorite beers for a user.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users/&lt;user_id&gt;/favorites</div>
+<div class="line"><strong>Method:</strong> POST</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> None</div>
+<div class="line"><strong>Expected Data:</strong> beers (list of id&#8217;s)</div>
+</div>
+<p>Example:</p>
+<p><em>Create favorites list including beers with id#&#8217;s 2, 6, 3, 19 for user with id# 5</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/users/5/favorites
+data={&quot;beers&quot;:[&quot;2&quot;, 6, 3, &quot;http://domain.tld/beer/api/v0.1/beers/19&quot;]}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.edit_user_favorites">
+<tt class="descclassname">app.routes.</tt><tt class="descname">edit_user_favorites</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#edit_user_favorites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.edit_user_favorites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add or remove a particular beer from a users favorites list.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users/&lt;user_id&gt;/favorites</div>
+<div class="line"><strong>Method:</strong> PUT</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+<div class="line"><strong>Expected Data:</strong> beer, action</div>
+</div>
+<p>Example:</p>
+<p><em>Add beer with id# 8 to user with id# 3</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/users/3/favorites
+data={&quot;beer&quot;:8, &quot;action&quot;:&quot;add&quot;}
+</pre></div>
+</div>
+<p><em>Remove beer with id# 2 from user with id# 3</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/users/3/favorites
+data={&quot;beer&quot;:&quot;http://www.domain.tld/beer/api/v0.1/beers/2&quot;, &quot;action&quot;:&quot;remove&quot;}
+</pre></div>
+</div>
+<p><em>Add a beer with id# 71 to user with id# 12</em></p>
+<div class="highlight-python"><div class="highlight"><pre>POST http://domain.tld/beer/api/v0.1/users/12/favorites
+data={&quot;beer&quot;:71, &quot;action&quot;:&quot;add&quot;}
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.delete_users_favorites_list">
+<tt class="descclassname">app.routes.</tt><tt class="descname">delete_users_favorites_list</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#delete_users_favorites_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.delete_users_favorites_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a users entire favorites list.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/users/&lt;user_id&gt;/favorites</div>
+<div class="line"><strong>Method:</strong> DELETE</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+</div>
+<p>Example:</p>
+<p><em>Delete favorites list for user with id# 4</em></p>
+<div class="highlight-python"><div class="highlight"><pre>DELETE http://domain.tld/beer/api/v0.1/users/4/favorites
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.list_all_user_favorites">
+<tt class="descclassname">app.routes.</tt><tt class="descname">list_all_user_favorites</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#list_all_user_favorites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.list_all_user_favorites" title="Permalink to this definition">¶</a></dt>
+<dd><p>List favorites list for each user in database.</p>
+<div class="line-block">
+<div class="line"><strong>URL:</strong> /beer/api/v0.1/favorites</div>
+<div class="line"><strong>METHOD:</strong> GET</div>
+<div class="line"><strong>Query Args:</strong> None</div>
+<div class="line"><strong>Authentication:</strong> Token/Password</div>
+</div>
+<p>Example:</p>
+<p><em>Get all favorites-list in system</em></p>
+<div class="highlight-python"><div class="highlight"><pre>GET http://domain.tld/beer/api/v0.1/favorites
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.before_request">
+<tt class="descclassname">app.routes.</tt><tt class="descname">before_request</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/routes.html#before_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.before_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks for <em>Content-Type: application/json</em> on all POST/PUT/DELETE routes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.after_request">
+<tt class="descclassname">app.routes.</tt><tt class="descname">after_request</tt><big>(</big><em>response</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#after_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.after_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update a users last_activity field after each authenticated api request.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.malformed_error">
+<tt class="descclassname">app.routes.</tt><tt class="descname">malformed_error</tt><big>(</big><em>error</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#malformed_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.malformed_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a 400 error when recieving a malformed request. Adds any messages that have been flash()&#8217;ed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.not_found_error">
+<tt class="descclassname">app.routes.</tt><tt class="descname">not_found_error</tt><big>(</big><em>error</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#not_found_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.not_found_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 404 error, usually when &lt;int:id&gt; in the route is not a valid id# for that model.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.method_unallowed_error">
+<tt class="descclassname">app.routes.</tt><tt class="descname">method_unallowed_error</tt><big>(</big><em>error</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#method_unallowed_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.method_unallowed_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 405 error when an unsupported HTTP method is used on an endpoint.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.internal_error">
+<tt class="descclassname">app.routes.</tt><tt class="descname">internal_error</tt><big>(</big><em>error</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#internal_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.internal_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 500 error when something goes terribly wrong.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="app.routes.unauthorized_error">
+<tt class="descclassname">app.routes.</tt><tt class="descname">unauthorized_error</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#unauthorized_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.unauthorized_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a 403 error when attempting to access data without authorization.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-app.models">
+<span id="database-models"></span><h2>Database Models<a class="headerlink" href="#module-app.models" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="app.models.is_model_id_or_uri">
+<tt class="descclassname">app.models.</tt><tt class="descname">is_model_id_or_uri</tt><big>(</big><em>session</em>, <em>model</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/app/models.html#is_model_id_or_uri"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.is_model_id_or_uri" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a valid model.primary_key or None.</p>
+<p>Keyword arguments:</p>
+<div class="line-block">
+<div class="line"><strong>session</strong> &#8211; the SQLAlchemy session</div>
+<div class="line"><strong>model</strong>   &#8211; the db.Model class to lookup</div>
+<div class="line"><strong>data</strong>    &#8211; the data to parse (expecting an int(id) or an api link</div>
+</div>
+<p>If data is a digit, lookup that primary_key for model, otherwise try to parse
+the last chunk from an api &#8216;link&#8217; uri.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="app.models.User">
+<em class="property">class </em><tt class="descclassname">app.models.</tt><tt class="descname">User</tt><big>(</big><em>username</em>, <em>email</em>, <em>password</em><big>)</big><a class="reference internal" href="_modules/app/models.html#User"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.User" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_sqlalchemy.Model</span></tt></p>
+<p>Database model representing a single User.</p>
+<p>Properties:</p>
+<div class="line-block">
+<div class="line"><strong>username</strong> &#8211; the users name/nickname.</div>
+<div class="line"><strong>email</strong>    &#8211; the users email address (unused).</div>
+<div class="line"><strong>password</strong> &#8211; the users password hash.</div>
+<div class="line"><strong>created_on</strong> &#8211; datetime from moment of creation.</div>
+<div class="line"><strong>last_activity</strong> &#8211; datetime from last authenticated api call.</div>
+<div class="line"><strong>last_beer_added</strong> &#8211; datetime from last added beer (for 24 hour limit).</div>
+<div class="line"><strong>reviews</strong> &#8211; reviews writen by the User.</div>
+<div class="line"><strong>favorites</strong> &#8211; list of User&#8217;s favorite beers.</div>
+</div>
+<dl class="method">
+<dt id="app.models.User.serialize">
+<tt class="descname">serialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/models.html#User.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.User.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON representation of a User object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="app.models.User.add_to_favorites">
+<tt class="descname">add_to_favorites</tt><big>(</big><em>beer</em><big>)</big><a class="reference internal" href="_modules/app/models.html#User.add_to_favorites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.User.add_to_favorites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a beer to users favorites list, checks for redundancy.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="app.models.User.remove_from_favorites">
+<tt class="descname">remove_from_favorites</tt><big>(</big><em>beer</em><big>)</big><a class="reference internal" href="_modules/app/models.html#User.remove_from_favorites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.User.remove_from_favorites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a beer from users favorites list.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="app.models.User.check_auth_token">
+<em class="property">static </em><tt class="descname">check_auth_token</tt><big>(</big><em>token</em><big>)</big><a class="reference internal" href="_modules/app/models.html#User.check_auth_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.User.check_auth_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validates a user&#8217;s authentication token, checks for expiration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="app.models.User.generate_auth_token">
+<tt class="descname">generate_auth_token</tt><big>(</big><em>expiration=1200</em><big>)</big><a class="reference internal" href="_modules/app/models.html#User.generate_auth_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.User.generate_auth_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a new authentication token for a user.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="app.models.User.hash_password">
+<tt class="descname">hash_password</tt><big>(</big><em>password</em><big>)</big><a class="reference internal" href="_modules/app/models.html#User.hash_password"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.User.hash_password" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a password hash from the plaintext.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="app.models.User.check_password">
+<tt class="descname">check_password</tt><big>(</big><em>password</em><big>)</big><a class="reference internal" href="_modules/app/models.html#User.check_password"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.User.check_password" title="Permalink to this definition">¶</a></dt>
+<dd><p>Confirms/validates a plaintext password against the users stored hash</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="app.models.Glass">
+<em class="property">class </em><tt class="descclassname">app.models.</tt><tt class="descname">Glass</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/app/models.html#Glass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Glass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_sqlalchemy.Model</span></tt></p>
+<p>Database model representing a style of beer Glass.</p>
+<p>Properties:</p>
+<div class="line-block">
+<div class="line"><strong>name</strong> &#8211; The name of the glass-style (e.g. &#8216;Tumbler&#8217;)</div>
+<div class="line"><strong>beers</strong> &#8211; List of beers that should be served in said glass-type</div>
+</div>
+<dl class="method">
+<dt id="app.models.Glass.serialize">
+<tt class="descname">serialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/models.html#Glass.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Glass.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON representation of a Glass object.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="app.models.Glass.id_or_uri_check">
+<em class="property">classmethod </em><tt class="descname">id_or_uri_check</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/app/models.html#Glass.id_or_uri_check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Glass.id_or_uri_check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a valid primary_key parsed from &#8216;data&#8217;, or None.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="app.models.Beer">
+<em class="property">class </em><tt class="descclassname">app.models.</tt><tt class="descname">Beer</tt><big>(</big><em>name</em>, <em>brewer</em>, <em>ibu</em>, <em>calories</em>, <em>abv</em>, <em>style</em>, <em>brew_location</em><big>)</big><a class="reference internal" href="_modules/app/models.html#Beer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Beer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_sqlalchemy.Model</span></tt></p>
+<p>Database model representing an individual Beer.</p>
+<dl class="method">
+<dt id="app.models.Beer.serialize">
+<tt class="descname">serialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/models.html#Beer.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Beer.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON representation of a Beer object.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="app.models.Beer.id_or_uri_check">
+<em class="property">classmethod </em><tt class="descname">id_or_uri_check</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/app/models.html#Beer.id_or_uri_check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Beer.id_or_uri_check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a valid primary_key parsed from &#8216;data&#8217;, or None.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="app.models.Beer.average_scores">
+<tt class="descname">average_scores</tt><a class="reference internal" href="_modules/app/models.html#Beer.average_scores"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Beer.average_scores" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds other reviews for the same beer_id, and returns the average of their scores.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="app.models.Review">
+<em class="property">class </em><tt class="descclassname">app.models.</tt><tt class="descname">Review</tt><big>(</big><em>beer_id</em>, <em>author_id</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/app/models.html#Review"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Review" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">flask_sqlalchemy.Model</span></tt></p>
+<p>Database model representing a beer Review.</p>
+<p>Properties:</p>
+<div class="line-block">
+<div class="line"><strong>aroma</strong>  &#8211; Score category, 1-5</div>
+<div class="line"><strong>appearance</strong> &#8211; Score category, 1-5</div>
+<div class="line"><strong>taste</strong> &#8211; Score category, 1-10</div>
+<div class="line"><strong>palate</strong> &#8211; Score category, 1-5</div>
+<div class="line"><strong>bottle_style</strong> &#8211; Score category, 1-5</div>
+</div>
+<dl class="method">
+<dt id="app.models.Review.serialize">
+<tt class="descname">serialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/app/models.html#Review.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Review.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a JSON representation of a Review object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="app.models.Review.update_score_values">
+<tt class="descname">update_score_values</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/app/models.html#Review.update_score_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Review.update_score_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates a Review&#8217;s scores based on a passed in dictionary.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="app.models.Review.validate_score_values">
+<em class="property">classmethod </em><tt class="descname">validate_score_values</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/app/models.html#Review.validate_score_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Review.validate_score_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that a score-dictionary&#8217;s values are within review-category constraints.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="app.models.Review.overall">
+<tt class="descname">overall</tt><a class="reference internal" href="_modules/app/models.html#Review.overall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.models.Review.overall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the sum of all the Reviews categories.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">beer-api package</a><ul>
+<li><a class="reference internal" href="#installation-instructions">Installation Instructions</a><ul>
+<li><a class="reference internal" href="#apache-httpd-wsgi-instructions">Apache HTTPD WSGI Instructions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes">API Endpoint Routes</a></li>
+<li><a class="reference internal" href="#module-app.models">Database Models</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to beer-api&#8217;s documentation!</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/app.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to beer-api’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">beer-api  documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Brandon Cornejo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
