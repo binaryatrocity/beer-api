@@ -9,7 +9,14 @@ from app.models import User, Glass, Beer, Review
 @app.route('/beer/api/v0.1/token')
 @auth.login_required
 def get_auth_token():
-    """ Generates an authentication token for current user. """
+    """ Generates an authentication token for current user.
+
+    |  **URL:** /beer/api/v0.1/token
+    |  **Method:** GET
+    |  **Query Args:** None
+    |  **Authentication:**  Password Only
+    
+    """
     token = g.user.generate_auth_token()
     return jsonify({ 'token': token.decode('ascii') })
 
@@ -157,13 +164,13 @@ def edit_user(id):
     
     """
     u = User.query.get_or_404(id)
-    if 'username' in request.json and type(request.json['username']) != unicode:
+    if 'username' in request.json and type(request.json['username']) != str:
         flash(u'Invalid input', 'error')
         abort(400)
-    if 'email' in request.json and type(request.json['email']) != unicode:
+    if 'email' in request.json and type(request.json['email']) != str:
         flash(u'Invalid input', 'error')
         abort(400)
-    if 'password' in request.json and type(request.json['password']) != unicode:
+    if 'password' in request.json and type(request.json['password']) != str:
         flash(u'Invalid input', 'error')
         abort(400)
     username = request.json.get('username')
@@ -314,7 +321,7 @@ def edit_glass(id):
     """
 
     g = Glass.query.get_or_404(id)
-    if 'name' in request.json and type(request.json['name']) != unicode:
+    if 'name' in request.json and type(request.json['name']) != str:
         flash(u'Invalid input', 'error')
         abort(400)
     name = request.json.get('name')
@@ -529,34 +536,34 @@ def edit_beer(id):
 
     """
     b = Beer.query.get_or_404(id)
-    if 'name' in request.json and type(request.json['name']) != unicode:
+    if 'name' in request.json and type(request.json['name']) not in [str, int]:
         flash(u'Invalid input', 'error')
         abort(400)
-    if 'brewer' in request.json and type(request.json['brewer']) != unicode:
+    if 'brewer' in request.json and type(request.json['brewer']) not in [str, int]:
         flash(u'Invalid input', 'error')
         abort(400)
-    if 'ibu' in request.json and type(request.json['ibu']) != unicode:
+    if 'ibu' in request.json and type(request.json['ibu']) not in [str, int]:
         flash(u'Invalid input', 'error')
         abort(400)
-    if 'calories' in request.json and type(request.json['calories']) != unicode:
+    if 'calories' in request.json and type(request.json['calories']) not in [str, int]:
         flash(u'Invalid input', 'error')
         abort(400)
-    if 'abv' in request.json and type(request.json['abv']) != unicode:
+    if 'abv' in request.json and type(request.json['abv']) not in [str, int, float]:
         flash(u'Invalid input', 'error')
         abort(400)
-    if 'style' in request.json and type(request.json['style']) != unicode:
+    if 'style' in request.json and type(request.json['style']) not in [str, int]:
         flash(u'Invalid input', 'error')
         abort(400)
-    if 'brew_location' in request.json and type(request.json['brew_location']) != unicode:
+    if 'brew_location' in request.json and type(request.json['brew_location']) not in [str, int]:
         flash(u'Invalid input', 'error')
         abort(400)
     name = request.json.get('name') or b.name
     brewer = request.json.get('brewer')
     ibu = request.json.get('ibu')
     calories = request.json.get('calories')
-    abv = request.json.get('ibu') or b.abv
+    abv = request.json.get('abv') or b.abv
     style = request.json.get('style') or b.style
-    brew_location = request.json.get('ibu')
+    brew_location = request.json.get('brew_location')
     glass_type_id = request.json.get('glass_type')
 
     if name is not None and name is not b.name:
@@ -694,7 +701,7 @@ def create_review():
     score['bottle_style'] = request.json.get(u'bottle_style')
     score['beer_id'] = request.json.get(u'beer_id')
 
-    for key, value in score.iteritems():
+    for key, value in score.items():
         if value == None:
             flash(u'Missing value for '+key, 'error')
             abort(400)
@@ -745,7 +752,7 @@ def edit_review(id):
     """
     r = Review.query.get_or_404(id)
     data = dict()
-    for key, value in request.json.iteritems():
+    for key, value in request.json.items():
         data[key] = value
     if not r.validate_score_values(data):
         flash(u'Unable to validate new scores', 'error')
@@ -820,6 +827,9 @@ def create_user_favorites_list(id):
     if u.favorites != []:
         flash(u'User already has a favorites list, delete it first', 'error')
         abort(400)
+    if not "beers" in request.json:
+        flash(u'Invalid input, expecting \'beers\' list.')
+        abort(400)
     for beer in request.json['beers']:
         if not Beer.id_or_uri_check(beer):
             flash(u'Invalid beer ID/URL specified', 'error')
@@ -833,7 +843,7 @@ def create_user_favorites_list(id):
 
 @app.route('/beer/api/v0.1/users/<int:id>/favorites', methods = ['PUT'])
 @auth.login_required
-def add_to_user_favorites(id):
+def edit_user_favorites(id):
     """ Add or remove a particular beer from a users favorites list.
 
     |  **URL:** /beer/api/v0.1/users/<user_id>/favorites

@@ -20,8 +20,8 @@ def is_model_id_or_uri(session, model, data):
     the last chunk from an api 'link' uri.
 
     """
-    uri = data.split('/')[-1]
-    if data.isdigit():
+    uri = str(data).split('/')[-1]
+    if type(data) == int or data.isdigit():
         x = model.query.get(data)
         if x is not None:
             return int(data)
@@ -54,7 +54,7 @@ class User(db.Model):
     """
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(60), unique=True)
-    email = db.Column(db.String(200), unique=True)
+    email = db.Column(db.String(200))
     password = db.Column(db.String(128))
     created_on = db.Column(db.DateTime)
     last_activity = db.Column(db.DateTime)
@@ -205,8 +205,8 @@ class Beer(db.Model):
             totals['taste'] += r.taste
             totals['palate'] += r.palate
             totals['bottle_style'] += r.bottle_style
-        for key,value in totals.iteritems():
-            totals[key] = value / len(self.reviews.all())
+        for key,value in totals.items():
+            totals[key] = value / (len(self.reviews.all()) or 1)
         return totals
 
 class Review(db.Model):
@@ -270,7 +270,7 @@ class Review(db.Model):
         """ Checks that a score-dictionary's values are within review-category constraints.  """
         #TODO: Maybe return a tuple with an error message? (e.g. which was invalid)
         score_max = {'aroma':5, 'appearance':5, 'taste':10, 'palate':5, 'bottle_style':5}
-        for category, value in score_max.iteritems():
+        for category, value in score_max.items():
             try:
                 if int(data[category]) < 0 or int(data[category]) > value:
                     return False # score is out of bounds

@@ -11,7 +11,7 @@ if __name__ == '__main__':
         from app import db
         db.create_all()
         db.session.commit()
-        print "Database created."
+        print("Database created.")
     else:
         app.run(host='0.0.0.0', debug=True)
-        print "Starting development server..."
+        print("Starting development server...")
