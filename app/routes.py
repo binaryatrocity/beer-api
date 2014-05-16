@@ -10,6 +10,7 @@ from app.models import User, Glass, Beer, Review
 @auth.login_required
 def get_auth_token():
     """ Generates an authentication token for current user.
+    Pass the token as username with an empty password as an alternate means of authentication.
 
     |  **URL:** /beer/api/v0.1/token
     |  **Method:** GET
