@@ -4,7 +4,7 @@
 A beer-manager API including user reviews, favorites lists, and glass-styles. Built on Python3.3 with the Flask
 microframework and SQLAlchemy.
 
-Dependencies: Python3.3, SQLite3
+Dependencies: Python3.3, SQLite3. Needed python packages are listed in **requirements.txt**, pass this to PIP for easy installation.
 
 ####Installation Instructions
 * Clone the GitHub repository                      `git clone https://github.com/binaryatrocity/beer-api.git`
@@ -31,3 +31,4 @@ for letting Apache serve the API are below.
 * Create a new Apache VirtualHost for the API      `reference http://flask.pocoo.org/docs/deploying/mod_wsgi/#configuring-apache for example file`
 * Enable the new Apache host                       `sudo a2ensite <virtualHostFilename>`
 * Restart Apache httpd to enable new configuration
+
