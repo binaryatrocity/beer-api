@@ -26,8 +26,8 @@ for letting Apache serve the API are below.
 
 
 
-Apache HTTPD WSGI Instructions
-******************************
+Apache HTTPD WSGI Instructions (Untested with pyvenv3.3)
+********************************************************
 
 * Install mod_wsgi for Apache if needed            `pacman -S libapache2-mod-wsgi OR apt-get install libapache2-mod-wsgi`
                                                    `see http://code.google.com/p/modwsgi/wiki/QuickInstallationGuide for other installation methods`
