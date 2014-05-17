@@ -4,7 +4,7 @@ beer-api package
 A beer-manager API including user reviews, favorites lists, and glass-styles. Built on Python3.3 with the Flask
 microframework and SQLAlchemy.
 
-Dependencies: Python3.3, SQLite3
+Dependencies: Python3.3, SQLite3. Needed python packages are listed in **requirements.txt**, pass this to PIP for easy installation.
 
 Installation Instructions
 -------------------------

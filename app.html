@@ -52,7 +52,7 @@
 <h1>beer-api package<a class="headerlink" href="#beer-api-package" title="Permalink to this headline">¶</a></h1>
 <p>A beer-manager API including user reviews, favorites lists, and glass-styles. Built on Python3.3 with the Flask
 microframework and SQLAlchemy.</p>
-<p>Dependencies: Python3.3, SQLite3</p>
+<p>Dependencies: Python3.3, SQLite3. Needed python packages are listed in <strong>requirements.txt</strong>, pass this to PIP for easy installation.</p>
 <div class="section" id="installation-instructions">
 <h2>Installation Instructions<a class="headerlink" href="#installation-instructions" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -94,7 +94,8 @@ for letting Apache serve the API are below.</p>
 <dl class="function">
 <dt id="app.routes.get_auth_token">
 <tt class="descclassname">app.routes.</tt><tt class="descname">get_auth_token</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/app/routes.html#get_auth_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#app.routes.get_auth_token" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates an authentication token for current user.</p>
+<dd><p>Generates an authentication token for current user.
+Pass the token as username with an empty password as an alternate means of authentication.</p>
 <div class="line-block">
 <div class="line"><strong>URL:</strong> /beer/api/v0.1/token</div>
 <div class="line"><strong>Method:</strong> GET</div>
